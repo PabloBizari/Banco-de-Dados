@@ -376,10 +376,34 @@ A matriz abaixo define as permissões operacionais de gravação e consulta no S
 
 ## 9. Uso de Inteligência Artificial
 
-| Item                   | Registro de uso                                                                                |
-| ---------------------- | ---------------------------------------------------------------------------------------------- |
-| **Ferramenta e etapa** | Google Gemini — organização da entrevista e estruturação do README no padrão formal.           |
-| **Motivação**          | Formatar os dados brutos colhidos na visita de campo segundo a notação técnica formal exigida. |
-| **Prompt utilizado**   | *"Refaça o esqueleto se baseando no novo modelo do dicionário de dados formal..."*             |
-| **Verificação**        | Checagem das regras operacionais em relação às declarações do proprietário Wanderley.          |
-| **Ajustes manuais**    | Remoção de campos e entidades de entrega/frete sugeridos automaticamente pela IA.              |
+### Google Gemini 3.1 Pro
+
+| Item                   | Registro de uso                                                                                                                              |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Ferramenta e etapa** | Google Gemini 3.1 Pro — organização da entrevista com o proprietário e estruturação inicial do README no padrão formal da Entrega 1.        |
+| **Motivação**          | Formatar os dados brutos colhidos na visita de campo segundo a notação técnica formal exigida (seções, títulos, tabelas e requisitos).      |
+| **Prompt utilizado**   | *"Refaça o esqueleto se baseando no novo modelo do dicionário de dados formal, mantendo todos os processos e regras de negócio levantados."* |
+| **Verificação**        | Comparação da versão sugerida com o esqueleto oficial da entrega e com as anotações da entrevista com Wanderley, ajustando termos e nomes.  |
+| **Ajustes manuais**    | Remoção de campos e entidades de entrega/frete sugeridos automaticamente pela IA e correção de trechos que não refletiam o caso real WK.     |
+
+
+### ChatGPT gratuito
+
+| Item                   | Registro de uso                                                                                                                             |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Ferramenta e etapa** | ChatGPT (versão gratuita) — geração da imagem do Diagrama Entidade-Relacionamento (DER) a partir da lista de entidades e relacionamentos.   |
+| **Motivação**          | Produzir rapidamente um DER visual no estilo visto em aula, facilitando a validação de cardinalidades e chaves antes de finalizar a entrega. |
+| **Prompt utilizado**   | *"Com base nas entidades CLIENTE, PRODUTO, VENDA, CONTAS_A_RECEBER, FORNECEDOR, PEDIDO_COMPRA e ITENS, monte um DER com cardinalidades."*    |
+| **Verificação**        | Checagem manual das cardinalidades e das chaves sugeridas pela IA em relação ao dicionário de dados e às regras operacionais descritas.     |
+| **Ajustes manuais**    | Correção de nomes de entidades, remoção de relacionamentos não previstos nos requisitos e pequenos ajustes de layout antes de salvar a imagem.|
+
+
+### Perplexity Pro Vivo
+
+| Item                   | Registro de uso                                                                                                                                                 |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Ferramenta e etapa** | Perplexity Pro Vivo — apoio na construção e refinamento do dicionário de dados conceitual em HTML, alinhando a estrutura com o exemplo de prontuário e o README. |
+| **Motivação**          | Garantir que o dicionário de dados tivesse metadados completos (tipo, obrigatoriedade, significado) e coerência com o DER, regras de negócio e fluxo descritos.  |
+| **Prompt utilizado**   | *"Tenho a entrega de um trabalho: converta o dicionário de dados do WK para HTML seguindo o modelo do professor, humanize o texto e mantenha todas as regras."*   |
+| **Verificação**        | Revisão de cada tabela gerada comparando com o DER profissional, requisitos funcionais e anotações de campo, ajustando descrições que não refletiam o funcionamento real. |
+| **Ajustes manuais**    | Humanização da linguagem (remoção de trechos com ‘cara de IA’), inclusão/remoção de atributos conforme o modelo conceitual e ajustes finos para seguir o exemplo dado. |
