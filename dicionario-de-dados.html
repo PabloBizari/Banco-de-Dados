@@ -20,7 +20,8 @@
 <p>
 Este modelo representa um depósito de materiais de construção no qual cada cliente
 pode realizar vendas à vista ou a prazo (fiado), comprando produtos do estoque.
-O sistema também registra fornecedores e pedidos de compra para reposição de estoque.
+O sistema também registra fornecedores, pedidos de compra para reposição de estoque
+e contas a receber/pagar associadas a clientes e fornecedores.
 </p>
 
 <table>
@@ -63,14 +64,19 @@ O sistema também registra fornecedores e pedidos de compra para reposição de 
       <td>1: N — um fornecedor pode receber vários pedidos de compra.</td>
     </tr>
     <tr>
+      <td>PRODUTO</td>
       <td>PEDIDO_COMPRA</td>
-      <td>ITEM_PEDIDO_COMPRA</td>
-      <td>1: N — todo pedido de compra possui um ou mais itens.</td>
+      <td>N: N — um pedido pode conter vários produtos e um produto pode aparecer em vários pedidos.</td>
     </tr>
     <tr>
-      <td>ITEM_PEDIDO_COMPRA</td>
-      <td>PRODUTO</td>
-      <td>N:1 — cada item de pedido se refere a um único produto.</td>
+      <td>PEDIDO_COMPRA</td>
+      <td>CONTAS_A_PAGAR</td>
+      <td>1:0 ou 1 — apenas pedidos com obrigação financeira geram conta a pagar.</td>
+    </tr>
+    <tr>
+      <td>CONTAS_A_PAGAR</td>
+      <td>FORNECEDOR</td>
+      <td>N:1 — um fornecedor pode ter várias contas a pagar registradas.</td>
     </tr>
   </tbody>
 </table>
@@ -83,8 +89,8 @@ ligando cliente (quando houver), forma de pagamento e itens vendidos.
 ITEM_VENDA é a entidade associativa que detalha cada produto vendido em uma venda.
 CONTAS_A_RECEBER registra dívidas de vendas fiado, vinculando venda e cliente devedor.
 FORNECEDOR é a empresa que vende materiais para reposição do depósito.
-PEDIDO_COMPRA é a ordem de compra enviada ao fornecedor. ITEM_PEDIDO_COMPRA
-detalha cada produto comprado em um pedido.
+PEDIDO_COMPRA é a ordem de compra enviada ao fornecedor, registrando valores e produtos comprados.
+CONTAS_A_PAGAR registra dívidas com fornecedores originadas dos pedidos de compra.
 </p>
 
 <h2>2. Fluxo de dados (visão de DFD)</h2>
@@ -96,8 +102,10 @@ a VENDA gera um ou mais registros em ITEM_VENDA, baixando o estoque em PRODUTO �
 se o pagamento for fiado, a VENDA gera um registro em CONTAS_A_RECEBER para o CLIENTE →
 em outro processo, o proprietário emite PEDIDO_COMPRA para um FORNECEDOR
 quando QT_ESTOQUE de algum PRODUTO estiver abaixo do desejado →
-o PEDIDO_COMPRA gera um ou mais registros em ITEM_PEDIDO_COMPRA →
-quando o pedido é entregue, o estoque de PRODUTO é atualizado com as quantidades compradas.
+o PEDIDO_COMPRA registra os produtos e valores negociados e pode gerar uma CONTAS_A_PAGAR
+associada ao FORNECEDOR →
+quando o pedido é entregue, o estoque de PRODUTO é atualizado com as quantidades compradas
+e a CONTAS_A_PAGAR é quitada ou mantida aberta conforme pagamento.
 Toda leitura ou escrita nessas tabelas é controlada pelo log de acesso do SGBD (§5),
 o que sustenta auditoria e conformidade com regras internas e com a LGPD (§6).
 </p>
@@ -141,7 +149,7 @@ IN_ indicador booleano, NR_ número de documento ou registro.
 </p>
 
 <p>
-Versão deste dicionário: v1.0, 21/setembro/2026. Qualquer alteração de estrutura deve
+Versão deste dicionário: v1.1, 23/setembro/2026. Qualquer alteração de estrutura deve
 gerar nova revisão registrada nesta seção.
 </p>
 
@@ -280,9 +288,9 @@ categoria detalhada. IN_ATIVO indica se o produto pode ser usado em vendas e ped
       <td>
         Código interno do produto; identifica de forma única cada item físico
         estocado no depósito, sem sofrer cálculos numéricos. É utilizado em
-        VENDA, ITEM_VENDA, PEDIDO_COMPRA e ITEM_PEDIDO_COMPRA para garantir que
-        baixas de estoque, reposições e consultas de preço se refiram sempre
-        ao mesmo produto, mesmo que sua descrição textual seja editada.
+        VENDA, ITEM_VENDA e PEDIDO_COMPRA para garantir que baixas de estoque,
+        reposições e consultas de preço se refiram sempre ao mesmo produto,
+        mesmo que sua descrição textual seja editada.
       </td>
     </tr>
     <tr>
@@ -316,7 +324,7 @@ categoria detalhada. IN_ATIVO indica se o produto pode ser usado em vendas e ped
       <td>
         Preço unitário de venda praticado atualmente para o produto. É usado
         como base para cálculo do valor bruto da VENDA e para comparação com
-        o custo de compra em ITEM_PEDIDO_COMPRA (margem). Deve ser sempre
+        o custo de compra registrado em PEDIDO_COMPRA (margem). Deve ser sempre
         maior que zero: valores inválidos podem gerar prejuízos diretos ou
         confundir o balconista na hora de fechar o orçamento.
       </td>
@@ -654,8 +662,8 @@ e conectados por +; IN_ATIVO indica se a empresa ainda participa da rotina de co
       <td>
         Código interno do fornecedor; identifica cada empresa com a qual
         a WK negocia compras de materiais. É utilizado em PEDIDO_COMPRA
-        para não depender apenas de nome, evitando confusão quando há
-        empresas com nomes parecidos.
+        e CONTAS_A_PAGAR para não depender apenas de nome, evitando confusão
+        quando há empresas com nomes parecidos.
       </td>
     </tr>
     <tr>
@@ -712,13 +720,15 @@ e conectados por +; IN_ATIVO indica se a empresa ainda participa da rotina de co
 <p>
 PEDIDO_COMPRA = @ID_PEDIDO_COMPRA + ID_FORNECEDOR + DT_PEDIDO + VL_TOTAL_PEDIDO
                  + [TP_PENDENTE | TP_RECEBIDO]
-                 + 1{/ITEM_PEDIDO_COMPRA/ = ID_PRODUTO + QT_COMPRADA + VL_CUSTO_UNITARIO}n
 </p>
 
 <p>
 <strong>Leitura:</strong> PEDIDO_COMPRA registra o fornecedor, a data, o valor total
 e o status do pedido (pendente ou recebido). A regra de negócio exige que VL_TOTAL_PEDIDO
 seja sempre maior ou igual a R$ 1.500,00 para cada fornecedor, refletindo o mínimo de compra.
+Os produtos comprados e seus valores unitários são associados ao pedido por meio dos
+campos de PEDIDO_COMPRA e de vínculos com PRODUTO, sem entidade de item separada
+no modelo conceitual.
 </p>
 
 <table>
@@ -738,7 +748,7 @@ seja sempre maior ou igual a R$ 1.500,00 para cada fornecedor, refletindo o mín
       <td>
         Código do pedido de compra; diferencia cada ordem enviada para fornecedores.
         É utilizado para localizar rapidamente um pedido em relatórios de reposição
-        e para vincular os itens comprados em ITEM_PEDIDO_COMPRA.
+        e para vincular a ele as contas a pagar geradas.
       </td>
     </tr>
     <tr>
@@ -788,15 +798,18 @@ seja sempre maior ou igual a R$ 1.500,00 para cada fornecedor, refletindo o mín
 Índices: PK ID_PEDIDO_COMPRA; índice em ID_FORNECEDOR.
 </p>
 
-<h3>ITEM_PEDIDO_COMPRA</h3>
+<h3>CONTAS_A_PAGAR</h3>
 
 <p>
-ITEM_PEDIDO_COMPRA = @ID_PEDIDO_COMPRA + ID_PRODUTO + QT_COMPRADA + VL_CUSTO_UNITARIO
+CONTAS_A_PAGAR = @ID_CONTA_PAGAR + ID_PEDIDO_COMPRA + ID_FORNECEDOR + VL_DEBITO + DT_LANCAMENTO
+                  + [TP_PENDENTE | TP_PAGO]
 </p>
 
 <p>
-<strong>Leitura:</strong> ITEM_PEDIDO_COMPRA detalha os produtos comprados
-em cada PEDIDO_COMPRA, registrando quantidade e custo unitário por produto.
+<strong>Leitura:</strong> CONTAS_A_PAGAR registra dívidas da WK com fornecedores,
+originadas de pedidos de compra. ID_PEDIDO_COMPRA e ID_FORNECEDOR são obrigatórios
+e conectados por +; VL_DEBITO e DT_LANCAMENTO definem valor e data da obrigação;
+o status exige escolher entre TP_PENDENTE ou TP_PAGO.
 </p>
 
 <table>
@@ -810,54 +823,78 @@ em cada PEDIDO_COMPRA, registrando quantidade e custo unitário por produto.
   </thead>
   <tbody>
     <tr>
+      <td>ID_CONTA_PAGAR</td>
+      <td>integer</td>
+      <td>Sim (PK)</td>
+      <td>
+        Identificador da conta a pagar; diferencia cada dívida com fornecedor
+        registrada no sistema. É usado para localizar uma pendência específica
+        em relatórios de contas a pagar e para registrar baixas de pagamento
+        de forma controlada.
+      </td>
+    </tr>
+    <tr>
       <td>ID_PEDIDO_COMPRA</td>
       <td>integer</td>
-      <td>Sim (PK, FK)</td>
+      <td>Sim (FK, único)</td>
       <td>
-        Referência ao pedido de compra ao qual o item pertence. Permite reconstruir
-        a lista completa de produtos adquiridos em uma ordem específica e acompanhar
-        se todos foram recebidos.
+        Referência ao pedido de compra que originou a obrigação financeira.
+        A unicidade garante que cada pedido gere no máximo uma conta a pagar,
+        evitando duplicidade de lançamentos.
       </td>
     </tr>
     <tr>
-      <td>ID_PRODUTO</td>
+      <td>ID_FORNECEDOR</td>
       <td>integer</td>
-      <td>Sim (PK, FK)</td>
+      <td>Sim (FK)</td>
       <td>
-        Produto comprado naquele item. Garante que a entrada de estoque seja feita
-        sobre o produto correto e que análises de custo por produto tenham base confiável.
+        Fornecedor credor daquela conta. Permite obter um extrato de dívidas
+        por fornecedor e apoiar negociações de prazo e quitação.
       </td>
     </tr>
     <tr>
-      <td>QT_COMPRADA</td>
+      <td>VL_DEBITO</td>
       <td>decimal(10,2)</td>
       <td>Sim</td>
       <td>
-        Quantidade comprada do produto. É o valor usado para aumentar QT_ESTOQUE
-        quando o pedido é recebido, impactando diretamente a disponibilidade de
-        venda futura.
+        Valor total em aberto referente ao pedido de compra. Deve refletir
+        o valor negociado com o fornecedor, até que seja pago ou renegociado.
       </td>
     </tr>
     <tr>
-      <td>VL_CUSTO_UNITARIO</td>
-      <td>decimal(10,2)</td>
+      <td>DT_LANCAMENTO</td>
+      <td>date</td>
       <td>Sim</td>
       <td>
-        Custo unitário negociado com o fornecedor. É essencial para comparar
-        custo de compra com VL_PRECO_VENDA e avaliar margens de lucro, além de
-        servir como histórico de preços negociados ao longo do tempo.
+        Data em que a conta foi registrada. Serve para ordenar dívidas
+        por antiguidade e planejar pagamentos conforme prioridade.
+      </td>
+    </tr>
+    <tr>
+      <td>TP_STATUS</td>
+      <td>varchar(15)</td>
+      <td>Sim</td>
+      <td>
+        Situação atual da conta (PENDENTE ou PAGO). Indica se o valor ainda
+        compõe o total de contas a pagar em aberto ou se já foi totalmente
+        quitado junto ao fornecedor.
       </td>
     </tr>
   </tbody>
 </table>
+
+<p>
+Índices: PK ID_CONTA_PAGAR; índices em ID_PEDIDO_COMPRA e ID_FORNECEDOR (consultas de contas a pagar por pedido e por fornecedor).
+</p>
 
 <h2>5. Log de acesso (metadado operacional)</h2>
 
 <p>
 As tabelas do sistema WK ficam sob mecanismo de auditoria do SGBD:
 logs de acesso registram leitura e escrita em CLIENTE, PRODUTO, VENDA,
-CONTAS_A_RECEBER, FORNECEDOR e PEDIDO_COMPRA. A política de retenção de log
-segue regras internas da organização, independente da retenção dos dados de negócio.
+CONTAS_A_RECEBER, FORNECEDOR, PEDIDO_COMPRA e CONTAS_A_PAGAR.
+A política de retenção de log segue regras internas da organização,
+independente da retenção dos dados de negócio.
 </p>
 
 <h2>6. Acesso por operação e conformidade com a LGPD (metadado administrativo)</h2>
@@ -915,6 +952,13 @@ segue regras internas da organização, independente da retenção dos dados de 
       <td>Proprietário</td>
       <td>Proprietário</td>
     </tr>
+    <tr>
+      <td>CONTAS_A_PAGAR</td>
+      <td>Proprietário</td>
+      <td>Sistema (ao registrar pedido)</td>
+      <td>Proprietário</td>
+      <td>Nenhum</td>
+    </tr>
   </tbody>
 </table>
 
@@ -923,8 +967,9 @@ CLIENTE e CONTAS_A_RECEBER tratam dados pessoais de clientes (nome, documento,
 contato, dívidas). O tratamento se ampara na execução de contrato/relação de crédito
 para vendas fiado. O acesso é restrito aos papéis envolvidos na operação (proprietário
 e balconista), e toda movimentação fica registrada em log, sustentando o princípio
-de responsabilização. PRODUTO, FORNECEDOR, VENDA e PEDIDO_COMPRA tratam dados
-cadastrais e operacionais comuns, sujeitos às mesmas regras gerais de acesso e log.
+de responsabilização. FORNECEDOR, PEDIDO_COMPRA e CONTAS_A_PAGAR tratam dados
+cadastrais e financeiros de fornecedores (não sensíveis), sujeitos às mesmas regras
+gerais de acesso e log. PRODUTO e VENDA tratam dados operacionais de negócio.
 </p>
 
 </body>
