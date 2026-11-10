@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>WK Materiais de Construção</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eceef0;--sf:#fff;--tx:#17191c;--mu:#5f656d;--bd:#d5d9dd;--ac:#ffc400;--ok:#1d8a4e;--bad:#c93b3b;--st:#2f5d8a;--sb:#17191c;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#101214;--sf:#1a1d21;--tx:#eef0f2;--mu:#9aa1a9;--bd:#2c3035;--sb:#0a0b0c;--st:#6fa3d6}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#101214;--sf:#1a1d21;--tx:#eef0f2;--mu:#9aa1a9;--bd:#2c3035;--sb:#0a0b0c;--st:#6fa3d6}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:500 15px/1.45 Barlow,system-ui,sans-serif}
+h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-weight:700;margin:0;letter-spacing:.01em}
+h1{font-size:38px;margin-bottom:14px}h3{font-size:21px;margin-bottom:10px}
+.app{display:grid;grid-template-columns:232px 1fr;min-height:100%}
+aside{background:var(--sb);color:#eef0f2;padding:0 0 16px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column}
+.tape{height:14px;background:repeating-linear-gradient(-45deg,#ffc400 0 12px,#17191c 12px 24px)}
+.logo{padding:18px 18px 14px;font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:34px;line-height:1}
+.logo span{display:block;font:500 12px Barlow,sans-serif;color:#9aa1a9;margin-top:6px;letter-spacing:.03em}
+.logo b{background:var(--ac);color:#17191c;padding:0 7px;margin-right:4px}
+nav button{display:block;width:100%;text-align:left;background:none;border:0;border-left:5px solid transparent;color:#c4c9ce;font:600 16px Barlow,sans-serif;padding:12px 18px;cursor:pointer}
+nav button:hover{background:#ffffff10}
+nav button.on{border-left-color:var(--ac);color:#fff;background:#ffffff14}
+.side-foot{margin-top:auto;padding:0 18px}
+.side-foot button{background:none;border:1px solid #444;color:#c4c9ce;border-radius:6px;padding:6px 10px;font:500 13px Barlow,sans-serif;cursor:pointer}
+main{padding:28px 32px 48px;min-width:0}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:6px;padding:18px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+.kpi{background:var(--sf);border:1px solid var(--bd);border-top:6px solid var(--ac);border-radius:4px;padding:14px 16px}
+.kpi.b{border-top-color:var(--bad)}.kpi.g{border-top-color:var(--ok)}.kpi.s{border-top-color:var(--st)}
+.kpi small{color:var(--mu);font-size:14px}.kpi strong{display:block;font:700 34px/1.1 "Barlow Condensed",sans-serif}
+.two{display:grid;grid-template-columns:2fr 1fr;gap:16px}
+.chart{display:flex;align-items:flex-end;gap:12px;height:190px;padding-top:10px}
+.bar{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;font-size:12px;color:var(--mu)}
+.bar i{display:block;width:100%;background:var(--ac);border-radius:3px 3px 0 0;min-height:3px}
+.bar em{font-style:normal;color:var(--tx);font-weight:600}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:13px;color:var(--mu);font-weight:600;padding:8px;border-bottom:2px solid var(--bd)}
+td{padding:9px 8px;border-bottom:1px solid var(--bd)}
+.r{text-align:right}
+.tag{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12.5px;font-weight:600;background:#ffc40033;color:var(--tx)}
+.tag.ok{background:#1d8a4e26;color:var(--ok)}.tag.bad{background:#c93b3b26;color:var(--bad)}
+input,select{font:500 15px Barlow,sans-serif;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:5px;padding:9px 10px;width:100%}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid var(--st);outline-offset:1px}
+.btn{background:var(--ac);color:#17191c;border:0;border-radius:5px;padding:10px 16px;font:700 15px Barlow,sans-serif;cursor:pointer}
+.btn:hover{filter:brightness(.94)}.btn.sm{padding:5px 11px;font-size:13px}.btn.ghost{background:none;border:1px solid var(--bd);color:var(--tx)}
+.pdv{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;align-items:start}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-top:12px}
+.prod{text-align:left;background:var(--bg);border:1px solid var(--bd);border-radius:5px;padding:10px;cursor:pointer;color:var(--tx);font:inherit}
+.prod:hover{border-color:var(--ac);box-shadow:inset 0 -4px 0 var(--ac)}
+.prod b{display:block;font-size:14.5px;line-height:1.25;min-height:36px}.prod span{color:var(--mu);font-size:13px}
+.prod strong{display:block;font:700 22px "Barlow Condensed",sans-serif;margin-top:4px}
+.line{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--bd)}
+.line div:first-child{flex:1;font-size:14px}.q{display:flex;align-items:center;gap:6px}
+.q button{width:26px;height:26px;border-radius:4px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);cursor:pointer;font-weight:700}
+.f{display:grid;gap:10px;margin:12px 0}.f label{font-size:13px;color:var(--mu)}
+.tot{display:flex;justify-content:space-between;font:700 30px "Barlow Condensed",sans-serif;margin:10px 0}
+.form{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr auto;gap:8px;margin-bottom:14px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--sb);color:#fff;padding:12px 20px;border-radius:6px;border-left:6px solid var(--ac);font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9;max-width:90%}
+.toast.show{opacity:1}.toast.err{border-left-color:var(--bad)}
+.empty{color:var(--mu);padding:14px 0}
+@media(max-width:900px){.app{grid-template-columns:1fr}aside{position:static;height:auto;flex-direction:row;flex-wrap:wrap}.tape{width:100%;flex:none}.logo{padding:10px 14px;font-size:26px}.logo span,.side-foot{display:none}nav{display:flex;flex-wrap:wrap;width:100%}nav button{width:auto;border-left:0;border-bottom:4px solid transparent;padding:10px 14px}nav button.on{border-bottom-color:var(--ac)}main{padding:18px 14px 40px}.kpis{grid-template-columns:1fr 1fr}.two,.pdv{grid-template-columns:1fr}.form{grid-template-columns:1fr 1fr}.scroll{overflow-x:auto}h1{font-size:32px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside>
+ <div class="tape"></div>
+ <div class="logo"><b>WK</b>Materiais<span>Materiais de Construção</span></div>
+ <nav id="nav"></nav>
+ <div class="side-foot"><button onclick="tema()">Alternar tema</button><br><br><button onclick="zerar()">Restaurar dados de exemplo</button></div>
+</aside>
+<main id="v"></main>
+</div>
+<div class="toast" id="t"></div>
+<script>
+/* ===== CAMADA DE DADOS: ao ligar o MySQL, troque o corpo destas funções por fetch('/api/...') ===== */
+const KEY='wk_v1';
+const iso=o=>{const d=new Date();d.setDate(d.getDate()+(o||0));return d.toLocaleDateString('sv-SE')};
+function seed(){
+ const P=[['Cimento CP-II 50 kg','Cimento',38.9,26.5,140],['Areia média (saco 20 kg)','Agregados',9.9,5.8,200],['Tijolo cerâmico 8 furos','Alvenaria',0.89,0.52,3000],['Telha cerâmica colonial','Cobertura',3.2,1.9,12],['Vergalhão CA-50 10 mm 12 m','Aço',54,39,60],['Argamassa AC-II 20 kg','Argamassa',29.9,19.5,85],['Tinta acrílica fosca 18 L','Tintas',289,188,18],['Tubo PVC esgoto 100 mm 6 m','Hidráulica',62,41,40],['Fio flexível 2,5 mm 100 m','Elétrica',189,126,25],['Torneira de metal 1/2"','Hidráulica',45,27,7],['Cal hidratada 20 kg','Cimento',21,13.4,90],['Piso porcelanato 60x60 (m²)','Revestimentos',74.9,49,150]];
+ const vd=[1850,2420,1980,3150,2760,3480,1290];
+ return{p:P.map((x,i)=>({id:i+1,nm:x[0],cat:x[1],pv:x[2],vc:x[3],qt:x[4]})),
+ c:[{id:1,nm:'Construtora Alicerce',lim:5000},{id:2,nm:'José Almeida (pedreiro)',lim:1500},{id:3,nm:'Marina Costa',lim:800}],
+ v:vd.map((t,i)=>({id:i+1,dt:iso(i-6),total:t,pag:'PIX',cli:null,itens:[]})),
+ r:[{id:1,venda:2,cli:1,vl:1240,lanc:iso(-5),venc:iso(-1),pago:null},{id:2,venda:4,cli:2,vl:530,lanc:iso(-3),venc:iso(27),pago:null},{id:3,venda:6,cli:3,vl:315,lanc:iso(-1),venc:iso(29),pago:null}],
+ a:[{id:1,forn:'Votorantim Cimentos',vl:6800,lanc:iso(-8),venc:iso(6),pago:null},{id:2,forn:'Tigre Tubos e Conexões',vl:2150,lanc:iso(-12),venc:iso(-2),pago:null},{id:3,forn:'Suvinil Distribuidora',vl:3400,lanc:iso(-4),venc:iso(14),pago:null}]}}
+let S;try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+if(!S)S=seed();
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const db={
+ produtos:()=>S.p,clientes:()=>S.c,vendas:()=>S.v,receber:()=>S.r,pagar:()=>S.a,
+ novoProduto(p){p.id=Math.max(0,...S.p.map(x=>x.id))+1;S.p.push(p);save()},
+ receberConta(id){S.r.find(x=>x.id==id).pago=iso();save()},
+ pagarConta(id){S.a.find(x=>x.id==id).pago=iso();save()},
+ finalizarVenda(v){
+  v.id=Math.max(0,...S.v.map(x=>x.id))+1;
+  v.itens.forEach(i=>{S.p.find(p=>p.id==i.id).qt-=i.qt});
+  S.v.push(v);
+  if(v.pag=='FIADO')S.r.push({id:Math.max(0,...S.r.map(x=>x.id))+1,venda:v.id,cli:v.cli,vl:v.total,lanc:iso(),venc:iso(30),pago:null});
+  save();return v}};
+/* ===== INTERFACE ===== */
+const $=s=>document.querySelector(s);
+const R=v=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const D=d=>d?d.split('-').reverse().join('/'):'';
+const sum=a=>a.reduce((s,x)=>s+x,0);
+const BAIXO=20;let tab='dash',cart=[];
+const tabs=[['dash','Painel'],['pdv','Nova venda'],['est','Estoque'],['fin','Financeiro']];
+function toast(m,e){const t=$('#t');t.textContent=m;t.className='toast show'+(e?' err':'');clearTimeout(toast.h);toast.h=setTimeout(()=>t.className='toast',2800)}
+function tema(){const r=document.documentElement;const dk=r.dataset.theme?r.dataset.theme=='dark':matchMedia('(prefers-color-scheme:dark)').matches;r.dataset.theme=dk?'light':'dark'}
+function zerar(){S=seed();cart=[];save();go('dash');toast('Dados de exemplo restaurados')}
+function go(t){tab=t;$('#nav').innerHTML=tabs.map(x=>`<button class="${x[0]==t?'on':''}" onclick="go('${x[0]}')">${x[1]}</button>`).join('');$('#v').innerHTML=V[t]();if(t=='pdv'){grid();lines()}window.scrollTo(0,0)}
+const emAberto=()=>db.receber().filter(x=>!x.pago);
+const V={
+dash(){
+ const hoje=sum(db.vendas().filter(v=>v.dt==iso()).map(v=>v.total));
+ const rec=sum(emAberto().map(x=>x.vl)),pag=sum(db.pagar().filter(x=>!x.pago).map(x=>x.vl));
+ const baixo=db.produtos().filter(p=>p.qt<=BAIXO);
+ const dias=[...Array(7)].map((_,i)=>{const d=iso(i-6);return[d,sum(db.vendas().filter(v=>v.dt==d).map(v=>v.total))]});
+ const mx=Math.max(1,...dias.map(d=>d[1]));
+ return`<h1>Painel do dia</h1><div class="kpis">
+ <div class="kpi g"><small>Vendas hoje</small><strong>${R(hoje)}</strong></div>
+ <div class="kpi s"><small>A receber (fiado)</small><strong>${R(rec)}</strong></div>
+ <div class="kpi b"><small>A pagar a fornecedores</small><strong>${R(pag)}</strong></div>
+ <div class="kpi"><small>Produtos com estoque baixo</small><strong>${baixo.length}</strong></div></div>
+ <div class="two"><section class="card"><h3>Vendas dos últimos 7 dias</h3><div class="chart">${dias.map(d=>`<div class="bar"><em>${d[1]?Math.round(d[1]/100)/10+'k':''}</em><i style="height:${d[1]/mx*78}%"></i>${D(d[0]).slice(0,5)}</div>`).join('')}</div></section>
+ <section class="card"><h3>Repor em breve</h3>${baixo.length?baixo.map(p=>`<div class="line"><div>${p.nm}</div><span class="tag bad">${p.qt} un</span></div>`).join(''):'<div class="empty">Nenhum produto com estoque baixo.</div>'}
+ <p><button class="btn sm" onclick="go('pdv')">Registrar venda</button></p></section></div>`},
+pdv(){
+ return`<h1>Nova venda</h1><div class="pdv"><section class="card"><input id="q" placeholder="Buscar produto ou categoria" oninput="grid()"><div id="grid" class="grid"></div></section>
+ <section class="card"><h3>Carrinho</h3><div id="lines"></div>
+ <div class="f"><div><label>Cliente (obrigatório no fiado)</label><select id="cli"><option value="">Sem cadastro</option>${db.clientes().map(c=>`<option value="${c.id}">${c.nm}</option>`).join('')}</select></div>
+ <div><label>Forma de pagamento</label><select id="pag" onchange="parc()"><option value="DINHEIRO">Dinheiro</option><option value="PIX">Pix</option><option value="DEBITO">Cartão de débito</option><option value="CREDITO">Cartão de crédito</option><option value="FIADO">Fiado</option></select></div>
+ <div id="pp" hidden><label>Parcelas</label><select id="par">${[1,2,3,4,5,6,10,12].map(n=>`<option>${n}</option>`).join('')}</select></div>
+ <div><label>Desconto (R$)</label><input id="des" type="number" min="0" step="0.01" value="0" oninput="lines()"></div></div>
+ <div class="tot"><span>Total</span><span id="tot">R$ 0,00</span></div>
+ <button class="btn" style="width:100%" onclick="fim()">Finalizar venda</button></section></div>`},
+est(){
+ return`<h1>Estoque</h1><section class="card"><h3>Cadastrar produto</h3><div class="form">
+ <input id="n_nm" placeholder="Nome do produto"><input id="n_cat" placeholder="Categoria"><input id="n_vc" type="number" min="0" step="0.01" placeholder="Custo"><input id="n_pv" type="number" min="0" step="0.01" placeholder="Preço de venda"><input id="n_qt" type="number" min="0" placeholder="Estoque"><button class="btn" onclick="novoP()">Adicionar</button></div>
+ <div class="scroll"><table><tr><th>Produto</th><th>Categoria</th><th class="r">Custo</th><th class="r">Preço</th><th class="r">Margem</th><th class="r">Estoque</th></tr>
+ ${db.produtos().map(p=>`<tr><td>${p.nm}</td><td>${p.cat}</td><td class="r">${R(p.vc)}</td><td class="r">${R(p.pv)}</td><td class="r">${p.vc?Math.round((p.pv-p.vc)/p.vc*100)+'%':'-'}</td><td class="r"><span class="tag ${p.qt<=BAIXO?'bad':'ok'}">${p.qt}</span></td></tr>`).join('')}</table></div></section>`},
+fin(){
+ const nm=id=>db.clientes().find(c=>c.id==id).nm,hj=iso();
+ const st=x=>x.pago?`<span class="tag ok">Pago em ${D(x.pago)}</span>`:x.venc<hj?'<span class="tag bad">Vencido</span>':'<span class="tag">Em aberto</span>';
+ return`<h1>Financeiro</h1><section class="card" style="margin-bottom:16px"><h3>Contas a receber (fiado)</h3><div class="scroll"><table><tr><th>Cliente</th><th>Lançamento</th><th>Vencimento</th><th class="r">Valor</th><th>Situação</th><th></th></tr>
+ ${db.receber().map(x=>`<tr><td>${nm(x.cli)}</td><td>${D(x.lanc)}</td><td>${D(x.venc)}</td><td class="r">${R(x.vl)}</td><td>${st(x)}</td><td>${x.pago?'':`<button class="btn sm" onclick="baixa('r',${x.id})">Receber</button>`}</td></tr>`).join('')}</table></div></section>
+ <section class="card"><h3>Contas a pagar</h3><div class="scroll"><table><tr><th>Fornecedor</th><th>Lançamento</th><th>Vencimento</th><th class="r">Valor</th><th>Situação</th><th></th></tr>
+ ${db.pagar().map(x=>`<tr><td>${x.forn}</td><td>${D(x.lanc)}</td><td>${D(x.venc)}</td><td class="r">${R(x.vl)}</td><td>${st(x)}</td><td>${x.pago?'':`<button class="btn sm" onclick="baixa('a',${x.id})">Pagar</button>`}</td></tr>`).join('')}</table></div></section>`}};
+function grid(){const q=($('#q')?.value||'').toLowerCase();const l=db.produtos().filter(p=>(p.nm+p.cat).toLowerCase().includes(q));
+ $('#grid').innerHTML=l.length?l.map(p=>`<button class="prod" onclick="add(${p.id})"><b>${p.nm}</b><span>${p.cat} · ${p.qt} em estoque</span><strong>${R(p.pv)}</strong></button>`).join(''):'<div class="empty">Nenhum produto encontrado.</div>'}
+function add(id){const p=db.produtos().find(x=>x.id==id),i=cart.find(x=>x.id==id),q=(i?i.qt:0)+1;
+ if(q>p.qt)return toast('Estoque insuficiente para '+p.nm,1);i?i.qt=q:cart.push({id,qt:1});lines()}
+function mud(id,d){const i=cart.find(x=>x.id==id),p=db.produtos().find(x=>x.id==id);
+ if(i.qt+d>p.qt)return toast('Estoque insuficiente para '+p.nm,1);i.qt+=d;if(i.qt<1)cart=cart.filter(x=>x.id!=id);lines()}
+const sub=()=>sum(cart.map(i=>db.produtos().find(p=>p.id==i.id).pv*i.qt));
+const tot=()=>Math.max(0,sub()-(+$('#des').value||0));
+function lines(){$('#lines').innerHTML=cart.length?cart.map(i=>{const p=db.produtos().find(x=>x.id==i.id);return`<div class="line"><div>${p.nm}<br><small>${R(p.pv)} cada</small></div><div class="q"><button onclick="mud(${i.id},-1)" aria-label="Diminuir">-</button>${i.qt}<button onclick="mud(${i.id},1)" aria-label="Aumentar">+</button></div><strong>${R(p.pv*i.qt)}</strong></div>`}).join(''):'<div class="empty">Toque em um produto para adicionar à venda.</div>';$('#tot').textContent=R(tot())}
+function parc(){$('#pp').hidden=$('#pag').value!='CREDITO'}
+function fim(){
+ if(!cart.length)return toast('Adicione ao menos um produto',1);
+ const pag=$('#pag').value,cli=+$('#cli').value||null,total=tot();
+ if(pag=='FIADO'){
+  if(!cli)return toast('Fiado exige cliente cadastrado',1);
+  const c=db.clientes().find(x=>x.id==cli),usado=sum(emAberto().filter(x=>x.cli==cli).map(x=>x.vl));
+  if(usado+total>c.lim)return toast('Limite de fiado excedido: disponível '+R(c.lim-usado),1)}
+ db.finalizarVenda({dt:iso(),total,desc:+$('#des').value||0,pag,parc:pag=='CREDITO'?+$('#par').value:1,cli,itens:cart.map(i=>({...i}))});
+ cart=[];go('pdv');toast('Venda registrada: '+R(total))}
+function novoP(){const g=i=>$('#n_'+i).value.trim();
+ if(!g('nm')||!(+g('pv')>0))return toast('Informe nome e preço de venda',1);
+ db.novoProduto({nm:g('nm'),cat:g('cat')||'Geral',vc:+g('vc')||0,pv:+g('pv'),qt:+g('qt')||0});go('est');toast('Produto cadastrado')}
+function baixa(t,id){t=='r'?db.receberConta(id):db.pagarConta(id);go('fin');toast(t=='r'?'Recebimento registrado':'Pagamento registrado')}
+go('dash');
+</script>
+</body>
+</html>
