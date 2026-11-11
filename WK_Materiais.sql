@@ -137,7 +137,7 @@ CREATE TABLE CONTAS_A_PAGAR (
 
 -- ===== Dados de exemplo =====
 INSERT INTO CLIENTE (NM_CLIENTE, VL_LIMITE_FIADO, DT_CONSENTIMENTO) VALUES
- ('Construtora Alicerce',5000,CURDATE()),('José Almeida (pedreiro)',1500,CURDATE()),('Marina Costa',800,CURDATE());
+ ('Construtora Alicerce',5000,'2026-11-10'),('José Almeida (pedreiro)',1500,'2026-11-10'),('Marina Costa',800,'2026-11-10');
 
 INSERT INTO PRODUTO (NM_PRODUTO, DS_CATEGORIA, VL_PRECO_VENDA, VL_CUSTO, QT_ESTOQUE) VALUES
  ('Cimento CP-II 50 kg','Cimento',38.90,26.50,140),('Areia média (saco 20 kg)','Agregados',9.90,5.80,200),
@@ -150,10 +150,12 @@ UPDATE PRODUTO SET PC_MARGEM = ROUND((VL_PRECO_VENDA - VL_CUSTO) / VL_CUSTO * 10
 
 INSERT INTO FORNECEDOR (NM_RAZAO_SOCIAL, NR_CNPJ, NR_TELEFONE) VALUES
  ('Votorantim Cimentos','00.000.000/0001-01','(11) 4000-0001'),('Tigre Tubos e Conexões','00.000.000/0001-02','(11) 4000-0002'),('Suvinil Distribuidora','00.000.000/0001-03','(11) 4000-0003');
-INSERT INTO PEDIDO_COMPRA (ID_FORNECEDOR, DT_PEDIDO, VL_TOTAL_PEDIDO, TP_STATUS) VALUES
- (1,CURDATE()-INTERVAL 8 DAY,6800,'RECEBIDO'),(2,CURDATE()-INTERVAL 12 DAY,2150,'RECEBIDO'),(3,CURDATE()-INTERVAL 4 DAY,3400,'RECEBIDO');
+INSERT INTO PEDIDO_COMPRA (ID_FORNECEDOR, DT_PEDIDO, VL_TOTAL_PEDIDO, TP_STATUS, DT_RECEBIMENTO) VALUES
+ (1,'2026-11-10'-INTERVAL 8 DAY,6860,'RECEBIDO','2026-11-10'-INTERVAL 5 DAY),(2,'2026-11-10'-INTERVAL 12 DAY,2180,'RECEBIDO','2026-11-10'-INTERVAL 9 DAY),(3,'2026-11-10'-INTERVAL 4 DAY,3384,'RECEBIDO','2026-11-10'-INTERVAL 1 DAY);
+INSERT INTO ITEM_PEDIDO_COMPRA (ID_PEDIDO_COMPRA, ID_PRODUTO, QT_PEDIDA, QT_RECEBIDA, VL_CUSTO_UNITARIO) VALUES
+ (1,1,200,200,26.50),(1,6,80,80,19.50),(2,8,40,40,41.00),(2,10,20,20,27.00),(3,7,18,18,188.00);
 INSERT INTO CONTAS_A_PAGAR (ID_PEDIDO_COMPRA, ID_FORNECEDOR, VL_DEBITO, DT_LANCAMENTO, DT_VENCIMENTO) VALUES
- (1,1,6800,CURDATE()-INTERVAL 8 DAY,CURDATE()+INTERVAL 6 DAY),(2,2,2150,CURDATE()-INTERVAL 12 DAY,CURDATE()-INTERVAL 2 DAY),(3,3,3400,CURDATE()-INTERVAL 4 DAY,CURDATE()+INTERVAL 14 DAY);
+ (1,1,6860,'2026-11-10'-INTERVAL 8 DAY,'2026-11-10'+INTERVAL 6 DAY),(2,2,2180,'2026-11-10'-INTERVAL 12 DAY,'2026-11-10'-INTERVAL 2 DAY),(3,3,3384,'2026-11-10'-INTERVAL 4 DAY,'2026-11-10'+INTERVAL 14 DAY);
 
 -- ===== Massa de dados (seed) =====
 -- Massa de dados fictícia · WK Materiais de Construção
@@ -11271,3 +11273,323 @@ UPDATE PRODUTO SET QT_ESTOQUE = CASE ID_PRODUTO
 END WHERE ID_PRODUTO BETWEEN 1 AND 50;
 
 COMMIT;
+
+-- =====================================================================
+-- A PARTIR DAQUI: consultas, correções e auditoria (WK Elétrica, Hidráulica,
+-- Ferragens e Ferramentas). Executar DEPOIS da carga acima.
+-- =====================================================================
+USE wk_materiais;
+SET NAMES utf8mb4;
+-- O seed acima desliga o autocommit; religa para que UPDATE/DELETE abaixo sejam gravados
+SET autocommit = 1;
+-- Data de referência da análise (último dia simulado da massa de dados)
+SET @data_ref = '2026-11-10';
+
+-- =====================================================================
+-- 5. SELECT COM JOIN (consultas que cruzam múltiplas tabelas)
+-- =====================================================================
+
+-- S01 — Quais vendas foram feitas no último dia, com cliente, caixa e forma de pagamento?
+SELECT v.ID_VENDA, v.DT_VENDA, v.TP_PAGAMENTO, v.VL_TOTAL,
+       COALESCE(c.NM_CLIENTE, 'Consumidor sem cadastro') AS CLIENTE,
+       cx.DT_CAIXA, cx.VL_ABERTURA
+FROM VENDA v
+JOIN CAIXA cx ON cx.ID_CAIXA = v.ID_CAIXA
+LEFT JOIN CLIENTE c ON c.ID_CLIENTE = v.ID_CLIENTE
+WHERE DATE(v.DT_VENDA) = @data_ref
+ORDER BY v.DT_VENDA;
+
+-- S02 — Quais itens (produto, quantidade, preço) compõem as vendas do último dia?
+SELECT v.ID_VENDA, p.NM_PRODUTO, p.DS_CATEGORIA, iv.QT_VENDIDA, iv.VL_UNITARIO_APLICADO,
+       ROUND(iv.QT_VENDIDA * iv.VL_UNITARIO_APLICADO, 2) AS VL_ITEM
+FROM VENDA v
+JOIN ITEM_VENDA iv ON iv.ID_VENDA = v.ID_VENDA
+JOIN PRODUTO p ON p.ID_PRODUTO = iv.ID_PRODUTO
+WHERE DATE(v.DT_VENDA) = @data_ref
+ORDER BY v.ID_VENDA, p.NM_PRODUTO;
+
+-- S03 — Quais devoluções foram registradas, de qual venda/cliente e com quais produtos?
+SELECT d.ID_DEVOLUCAO, d.DT_DEVOLUCAO, d.TP_DESTINO, d.VL_CREDITO, d.DS_MOTIVO,
+       v.ID_VENDA, COALESCE(c.NM_CLIENTE, 'Sem cadastro') AS CLIENTE,
+       p.NM_PRODUTO, idv.QT_DEVOLVIDA
+FROM DEVOLUCAO d
+JOIN VENDA v ON v.ID_VENDA = d.ID_VENDA
+LEFT JOIN CLIENTE c ON c.ID_CLIENTE = v.ID_CLIENTE
+JOIN ITEM_DEVOLUCAO idv ON idv.ID_DEVOLUCAO = d.ID_DEVOLUCAO
+JOIN PRODUTO p ON p.ID_PRODUTO = idv.ID_PRODUTO
+ORDER BY d.DT_DEVOLUCAO DESC
+LIMIT 20;
+
+-- S04 — Quais pedidos de compra foram feitos a cada fornecedor e o que contêm?
+SELECT f.NM_RAZAO_SOCIAL, pc.ID_PEDIDO_COMPRA, pc.DT_PEDIDO, pc.TP_STATUS,
+       p.NM_PRODUTO, ipc.QT_PEDIDA, ipc.QT_RECEBIDA, ipc.VL_CUSTO_UNITARIO
+FROM PEDIDO_COMPRA pc
+JOIN FORNECEDOR f ON f.ID_FORNECEDOR = pc.ID_FORNECEDOR
+JOIN ITEM_PEDIDO_COMPRA ipc ON ipc.ID_PEDIDO_COMPRA = pc.ID_PEDIDO_COMPRA
+JOIN PRODUTO p ON p.ID_PRODUTO = ipc.ID_PRODUTO
+ORDER BY pc.DT_PEDIDO DESC, pc.ID_PEDIDO_COMPRA
+LIMIT 20;
+
+-- =====================================================================
+-- 6. UPDATE
+-- =====================================================================
+
+-- U01 — Aplica a regra RN01 (desconto de 5% em dinheiro/PIX) nas vendas da massa
+--       que estavam sem o desconto correto, e refaz o total.
+UPDATE VENDA v
+JOIN (SELECT ID_VENDA, ROUND(SUM(QT_VENDIDA * VL_UNITARIO_APLICADO), 2) AS BRUTO
+      FROM ITEM_VENDA GROUP BY ID_VENDA) b ON b.ID_VENDA = v.ID_VENDA
+SET v.VL_DESCONTO = ROUND(b.BRUTO * 0.05, 2),
+    v.VL_TOTAL    = b.BRUTO - ROUND(b.BRUTO * 0.05, 2)
+WHERE v.TP_PAGAMENTO IN ('DINHEIRO', 'PIX');
+
+-- U02 — Recalcula o fechamento de cada caixa (abertura + vendas em dinheiro),
+--       já refletindo os totais corrigidos em U01.
+UPDATE CAIXA cx
+SET cx.VL_FECHAMENTO = cx.VL_ABERTURA + COALESCE((
+      SELECT SUM(v.VL_TOTAL) FROM VENDA v
+      WHERE v.ID_CAIXA = cx.ID_CAIXA AND v.TP_PAGAMENTO = 'DINHEIRO'), 0)
+WHERE cx.VL_FECHAMENTO IS NOT NULL;
+
+-- U03 — Baixa uma conta a receber (fiado) quitada pelo cliente.
+UPDATE CONTAS_A_RECEBER
+SET TP_STATUS = 'PAGO', DT_PAGAMENTO = @data_ref
+WHERE ID_CONTA = (SELECT ID_CONTA FROM (
+        SELECT ID_CONTA FROM CONTAS_A_RECEBER
+        WHERE TP_STATUS IN ('ABERTO','ATRASADO') ORDER BY DT_VENCIMENTO LIMIT 1) t);
+
+-- =====================================================================
+-- 7. DELETE
+-- =====================================================================
+
+-- D01 — Remove um cadastro de teste (sem vendas associadas). Cadastros com histórico
+--       NÃO são apagados: são inativados (RN09). O DELETE só atinge o registro de teste.
+INSERT INTO CLIENTE (NM_CLIENTE, IN_ATIVO) VALUES ('CADASTRO DE TESTE (apagar)', FALSE);
+DELETE FROM CLIENTE
+WHERE NM_CLIENTE = 'CADASTRO DE TESTE (apagar)'
+  AND NOT EXISTS (SELECT 1 FROM VENDA v WHERE v.ID_CLIENTE = CLIENTE.ID_CLIENTE);
+
+-- =====================================================================
+-- 8. CONSULTAS GERENCIAIS
+-- =====================================================================
+
+-- G01 — Quais produtos estão com estoque baixo (menos de 30 unidades) hoje?
+-- Atende: P1 (controle de estoque) | KPI: produtos abaixo do estoque mínimo
+SELECT ID_PRODUTO, NM_PRODUTO, DS_CATEGORIA, QT_ESTOQUE
+FROM PRODUTO
+WHERE IN_ATIVO = TRUE AND QT_ESTOQUE < 30
+ORDER BY QT_ESTOQUE;
+
+-- G02 — Qual o faturamento, o número de vendas e o ticket médio por mês?
+-- Atende: P2 (histórico de vendas) | KPI: faturamento mensal, ticket médio
+SELECT DATE_FORMAT(DT_VENDA, '%Y-%m') AS MES,
+       COUNT(*)                       AS QT_VENDAS,
+       ROUND(SUM(VL_TOTAL), 2)        AS FATURAMENTO,
+       ROUND(AVG(VL_TOTAL), 2)        AS TICKET_MEDIO
+FROM VENDA
+GROUP BY DATE_FORMAT(DT_VENDA, '%Y-%m')
+ORDER BY MES;
+
+-- G03 — Quais são os 10 produtos mais vendidos em valor?
+-- Atende: P2 (histórico de vendas)
+SELECT p.NM_PRODUTO, p.DS_CATEGORIA,
+       SUM(iv.QT_VENDIDA)                                   AS QT_VENDIDA,
+       ROUND(SUM(iv.QT_VENDIDA * iv.VL_UNITARIO_APLICADO), 2) AS VL_VENDIDO
+FROM ITEM_VENDA iv
+JOIN PRODUTO p ON p.ID_PRODUTO = iv.ID_PRODUTO
+GROUP BY p.ID_PRODUTO, p.NM_PRODUTO, p.DS_CATEGORIA
+ORDER BY VL_VENDIDO DESC
+LIMIT 10;
+
+-- G04 — Como foi o fluxo de caixa dos últimos 7 dias, por forma de pagamento?
+-- Atende: P3 (fluxo de caixa)
+SELECT cx.DT_CAIXA, cx.VL_ABERTURA,
+       ROUND(SUM(CASE WHEN v.TP_PAGAMENTO = 'DINHEIRO' THEN v.VL_TOTAL ELSE 0 END), 2) AS DINHEIRO,
+       ROUND(SUM(CASE WHEN v.TP_PAGAMENTO = 'PIX'      THEN v.VL_TOTAL ELSE 0 END), 2) AS PIX,
+       ROUND(SUM(CASE WHEN v.TP_PAGAMENTO = 'DEBITO'   THEN v.VL_TOTAL ELSE 0 END), 2) AS DEBITO,
+       ROUND(SUM(CASE WHEN v.TP_PAGAMENTO = 'CREDITO'  THEN v.VL_TOTAL ELSE 0 END), 2) AS CREDITO,
+       ROUND(SUM(CASE WHEN v.TP_PAGAMENTO = 'FIADO'    THEN v.VL_TOTAL ELSE 0 END), 2) AS FIADO,
+       ROUND(SUM(v.VL_TOTAL), 2) AS TOTAL_DIA, cx.VL_FECHAMENTO
+FROM CAIXA cx
+JOIN VENDA v ON v.ID_CAIXA = cx.ID_CAIXA
+WHERE cx.DT_CAIXA > DATE_SUB(@data_ref, INTERVAL 7 DAY)
+GROUP BY cx.ID_CAIXA, cx.DT_CAIXA, cx.VL_ABERTURA, cx.VL_FECHAMENTO
+ORDER BY cx.DT_CAIXA;
+
+-- G05 — Qual a participação de cada forma de pagamento no faturamento?
+-- Atende: P3 (fluxo de caixa) | KPI: participação por forma de pagamento
+SELECT TP_PAGAMENTO, COUNT(*) AS QT_VENDAS, ROUND(SUM(VL_TOTAL), 2) AS VALOR,
+       ROUND(100 * SUM(VL_TOTAL) / (SELECT SUM(VL_TOTAL) FROM VENDA), 2) AS PERC_FATURAMENTO
+FROM VENDA
+GROUP BY TP_PAGAMENTO
+ORDER BY VALOR DESC;
+
+-- G06 — Quais clientes têm saldo devedor de fiado em aberto, e quanto está vencido?
+-- Atende: P4 (controle do fiado)
+SELECT c.ID_CLIENTE, c.NM_CLIENTE, c.VL_LIMITE_FIADO,
+       COUNT(*)                                                         AS QT_CONTAS,
+       ROUND(SUM(cr.VL_DEBITO), 2)                                      AS SALDO_DEVEDOR,
+       ROUND(SUM(CASE WHEN cr.DT_VENCIMENTO < @data_ref THEN cr.VL_DEBITO ELSE 0 END), 2) AS VALOR_VENCIDO
+FROM CONTAS_A_RECEBER cr
+JOIN CLIENTE c ON c.ID_CLIENTE = cr.ID_CLIENTE
+WHERE cr.DT_PAGAMENTO IS NULL
+GROUP BY c.ID_CLIENTE, c.NM_CLIENTE, c.VL_LIMITE_FIADO
+ORDER BY SALDO_DEVEDOR DESC
+LIMIT 15;
+
+-- G07 — Qual o percentual do fiado em aberto que já está vencido (inadimplência)?
+-- Atende: P4 (controle do fiado) | KPI: % de fiado inadimplente
+SELECT ROUND(SUM(VL_DEBITO), 2) AS TOTAL_EM_ABERTO,
+       ROUND(SUM(CASE WHEN DT_VENCIMENTO < @data_ref THEN VL_DEBITO ELSE 0 END), 2) AS TOTAL_VENCIDO,
+       ROUND(100 * SUM(CASE WHEN DT_VENCIMENTO < @data_ref THEN VL_DEBITO ELSE 0 END) / SUM(VL_DEBITO), 2) AS PERC_INADIMPLENTE
+FROM CONTAS_A_RECEBER
+WHERE DT_PAGAMENTO IS NULL;
+
+-- G08 — Quanto foi comprado de cada fornecedor e qual o valor médio por pedido?
+-- Atende: P5 (compras e contas a pagar)
+SELECT f.NM_RAZAO_SOCIAL, COUNT(*) AS QT_PEDIDOS,
+       ROUND(SUM(pc.VL_TOTAL_PEDIDO), 2) AS TOTAL_COMPRADO,
+       ROUND(AVG(pc.VL_TOTAL_PEDIDO), 2) AS PEDIDO_MEDIO
+FROM PEDIDO_COMPRA pc
+JOIN FORNECEDOR f ON f.ID_FORNECEDOR = pc.ID_FORNECEDOR
+WHERE pc.TP_STATUS <> 'CANCELADO'
+GROUP BY f.ID_FORNECEDOR, f.NM_RAZAO_SOCIAL
+ORDER BY TOTAL_COMPRADO DESC;
+
+-- G09 — Quais contas a pagar estão vencidas ou vencem nos próximos 7 dias?
+-- Atende: P5 (compras e contas a pagar) | KPI: contas a pagar a vencer
+SELECT cp.ID_CONTA_PAGAR, f.NM_RAZAO_SOCIAL, cp.VL_DEBITO, cp.DT_VENCIMENTO,
+       CASE WHEN cp.DT_VENCIMENTO < @data_ref THEN 'VENCIDA' ELSE 'A VENCER' END AS SITUACAO
+FROM CONTAS_A_PAGAR cp
+JOIN FORNECEDOR f ON f.ID_FORNECEDOR = cp.ID_FORNECEDOR
+WHERE cp.DT_PAGAMENTO IS NULL
+  AND cp.DT_VENCIMENTO <= DATE_ADD(@data_ref, INTERVAL 7 DAY)
+ORDER BY cp.DT_VENCIMENTO;
+
+-- G10 — Quais os motivos e destinos das devoluções, e qual a taxa de devolução sobre as vendas?
+-- Atende: P6 (trocas e devoluções) | KPI: taxa de devolução
+SELECT d.TP_DESTINO, COUNT(*) AS QT_DEVOLUCOES, ROUND(SUM(d.VL_CREDITO), 2) AS CREDITO_GERADO,
+       ROUND(100 * COUNT(*) / (SELECT COUNT(*) FROM VENDA), 2) AS PERC_SOBRE_VENDAS
+FROM DEVOLUCAO d
+GROUP BY d.TP_DESTINO;
+
+-- G11 — Qual a margem bruta por categoria de produto?
+-- Atende: P2 (histórico de vendas) | KPI: margem bruta por categoria
+SELECT p.DS_CATEGORIA,
+       ROUND(SUM(iv.QT_VENDIDA * iv.VL_UNITARIO_APLICADO), 2) AS RECEITA,
+       ROUND(SUM(iv.QT_VENDIDA * p.VL_CUSTO), 2)               AS CUSTO,
+       ROUND(100 * (SUM(iv.QT_VENDIDA * iv.VL_UNITARIO_APLICADO) - SUM(iv.QT_VENDIDA * p.VL_CUSTO))
+             / SUM(iv.QT_VENDIDA * iv.VL_UNITARIO_APLICADO), 2) AS MARGEM_PERC
+FROM ITEM_VENDA iv
+JOIN PRODUTO p ON p.ID_PRODUTO = iv.ID_PRODUTO
+GROUP BY p.DS_CATEGORIA
+ORDER BY MARGEM_PERC DESC;
+
+-- =====================================================================
+-- 9. CONSULTAS DE AUDITORIA (cada uma retorna as linhas que VIOLAM a regra;
+--    resultado vazio = regra cumprida)
+-- =====================================================================
+
+-- A01 — Existe venda FIADO sem cliente?
+-- Verifica: RN03 (fiado exige cliente cadastrado)
+SELECT ID_VENDA, DT_VENDA, VL_TOTAL FROM VENDA
+WHERE TP_PAGAMENTO = 'FIADO' AND ID_CLIENTE IS NULL;
+
+-- A02 — Existe venda registrada sem nenhum item?
+-- Verifica: RNF03 (nenhuma venda sem itens; integridade do estoque)
+SELECT v.ID_VENDA, v.DT_VENDA FROM VENDA v
+WHERE NOT EXISTS (SELECT 1 FROM ITEM_VENDA iv WHERE iv.ID_VENDA = v.ID_VENDA);
+
+-- A03 — Existe venda em dinheiro/PIX sem o desconto de 5%?
+-- Verifica: RN01 (desconto à vista de 5%)
+SELECT v.ID_VENDA, v.TP_PAGAMENTO, v.VL_TOTAL, v.VL_DESCONTO,
+       ROUND((v.VL_TOTAL + v.VL_DESCONTO) * 0.05, 2) AS DESCONTO_ESPERADO
+FROM VENDA v
+WHERE v.TP_PAGAMENTO IN ('DINHEIRO', 'PIX')
+  AND ABS(v.VL_DESCONTO - ROUND((v.VL_TOTAL + v.VL_DESCONTO) * 0.05, 2)) > 0.01;
+
+-- A04 — Existe venda a prazo/cartão com desconto indevido?
+-- Verifica: RN01 (desconto só para dinheiro/PIX)
+SELECT ID_VENDA, TP_PAGAMENTO, VL_DESCONTO FROM VENDA
+WHERE TP_PAGAMENTO NOT IN ('DINHEIRO', 'PIX') AND VL_DESCONTO > 0;
+
+-- A05 — Existe pedido de compra (não cancelado) abaixo do valor mínimo de R$ 1.500,00?
+-- Verifica: RN04 (valor mínimo por pedido ao fornecedor)
+SELECT pc.ID_PEDIDO_COMPRA, f.NM_RAZAO_SOCIAL, pc.DT_PEDIDO, pc.VL_TOTAL_PEDIDO, pc.TP_STATUS
+FROM PEDIDO_COMPRA pc
+JOIN FORNECEDOR f ON f.ID_FORNECEDOR = pc.ID_FORNECEDOR
+WHERE pc.TP_STATUS <> 'CANCELADO' AND pc.VL_TOTAL_PEDIDO < 1500
+ORDER BY pc.VL_TOTAL_PEDIDO;
+
+-- A06 — Existe produto com estoque negativo?
+-- Verifica: RN06 (estoque não pode ser negativo)
+SELECT ID_PRODUTO, NM_PRODUTO, QT_ESTOQUE FROM PRODUTO WHERE QT_ESTOQUE < 0;
+
+-- A07 — Existe venda FIADO sem conta a receber, ou conta a receber de venda que não é FIADO?
+-- Verifica: RN07 (cada fiado gera uma conta a receber)
+SELECT v.ID_VENDA, 'FIADO sem conta a receber' AS PROBLEMA
+FROM VENDA v LEFT JOIN CONTAS_A_RECEBER cr ON cr.ID_VENDA = v.ID_VENDA
+WHERE v.TP_PAGAMENTO = 'FIADO' AND cr.ID_CONTA IS NULL
+UNION ALL
+SELECT v.ID_VENDA, 'Conta a receber de venda não FIADO'
+FROM CONTAS_A_RECEBER cr JOIN VENDA v ON v.ID_VENDA = cr.ID_VENDA
+WHERE v.TP_PAGAMENTO <> 'FIADO';
+
+-- A08 — O total da venda confere com a soma dos itens menos o desconto?
+-- Verifica: integridade financeira (RN01/RNF03)
+SELECT v.ID_VENDA, v.VL_TOTAL, v.VL_DESCONTO, ROUND(SUM(iv.QT_VENDIDA * iv.VL_UNITARIO_APLICADO), 2) AS SOMA_ITENS
+FROM VENDA v JOIN ITEM_VENDA iv ON iv.ID_VENDA = v.ID_VENDA
+GROUP BY v.ID_VENDA, v.VL_TOTAL, v.VL_DESCONTO
+HAVING ABS(SOMA_ITENS - v.VL_DESCONTO - v.VL_TOTAL) > 0.01;
+
+-- A09 — Existe venda fora do dia do caixa, ou caixa de dia anterior sem fechamento?
+-- Verifica: RN08 (uma venda pertence ao caixa do próprio dia; caixa é fechado)
+SELECT v.ID_VENDA AS REF, 'Venda em caixa de outra data' AS PROBLEMA
+FROM VENDA v JOIN CAIXA cx ON cx.ID_CAIXA = v.ID_CAIXA
+WHERE DATE(v.DT_VENDA) <> cx.DT_CAIXA
+UNION ALL
+SELECT cx.ID_CAIXA, 'Caixa anterior sem fechamento'
+FROM CAIXA cx WHERE cx.VL_FECHAMENTO IS NULL AND cx.DT_CAIXA < @data_ref;
+
+-- A10 — Existe pedido de compra recebido sem data de recebimento ou sem itens?
+-- Verifica: RN07/RNF03 (pedido recebido movimenta estoque e precisa de itens)
+SELECT pc.ID_PEDIDO_COMPRA, 'RECEBIDO sem data de recebimento' AS PROBLEMA
+FROM PEDIDO_COMPRA pc WHERE pc.TP_STATUS = 'RECEBIDO' AND pc.DT_RECEBIMENTO IS NULL
+UNION ALL
+SELECT pc.ID_PEDIDO_COMPRA, 'Pedido sem itens'
+FROM PEDIDO_COMPRA pc
+WHERE NOT EXISTS (SELECT 1 FROM ITEM_PEDIDO_COMPRA i WHERE i.ID_PEDIDO_COMPRA = pc.ID_PEDIDO_COMPRA);
+
+-- A11 — Existe devolução maior que a quantidade vendida, ou crédito incoerente com o destino?
+-- Verifica: RN05 (devolução gera crédito ou troca, nunca dinheiro)
+SELECT d.ID_DEVOLUCAO, 'Quantidade devolvida acima da vendida' AS PROBLEMA
+FROM DEVOLUCAO d
+JOIN ITEM_DEVOLUCAO idv ON idv.ID_DEVOLUCAO = d.ID_DEVOLUCAO
+LEFT JOIN ITEM_VENDA iv ON iv.ID_VENDA = d.ID_VENDA AND iv.ID_PRODUTO = idv.ID_PRODUTO
+WHERE iv.ID_VENDA IS NULL OR idv.QT_DEVOLVIDA > iv.QT_VENDIDA
+UNION ALL
+SELECT ID_DEVOLUCAO, 'Crédito incoerente com o destino'
+FROM DEVOLUCAO
+WHERE (TP_DESTINO = 'TROCA' AND VL_CREDITO <> 0) OR (TP_DESTINO = 'CREDITO' AND VL_CREDITO <= 0);
+
+-- A12 — Existe cliente anonimizado que ainda guarda dados pessoais?
+-- Verifica: RN09 (anonimização LGPD)
+SELECT ID_CLIENTE, NM_CLIENTE FROM CLIENTE
+WHERE DT_ANONIMIZACAO IS NOT NULL
+  AND (NR_CPF_CNPJ IS NOT NULL OR NR_TELEFONE IS NOT NULL OR DS_ENDERECO IS NOT NULL OR IN_ATIVO = TRUE);
+
+-- A13 — Existe cliente com fiado em aberto acima do limite de crédito?
+-- Verifica: RN11 (fiado respeita o limite do cliente)
+SELECT c.ID_CLIENTE, c.NM_CLIENTE, c.VL_LIMITE_FIADO, ROUND(SUM(cr.VL_DEBITO), 2) AS SALDO_ABERTO
+FROM CLIENTE c JOIN CONTAS_A_RECEBER cr ON cr.ID_CLIENTE = c.ID_CLIENTE
+WHERE cr.DT_PAGAMENTO IS NULL AND c.VL_LIMITE_FIADO IS NOT NULL
+GROUP BY c.ID_CLIENTE, c.NM_CLIENTE, c.VL_LIMITE_FIADO
+HAVING SALDO_ABERTO > c.VL_LIMITE_FIADO;
+
+-- A14 — Resumo: quantas violações há por regra?
+-- Verifica: RN01, RN03, RN04, RN06 (visão consolidada para a apresentação)
+SELECT 'RN01 - à vista sem 5%' AS REGRA, COUNT(*) AS VIOLACOES FROM VENDA
+  WHERE TP_PAGAMENTO IN ('DINHEIRO','PIX') AND ABS(VL_DESCONTO - ROUND((VL_TOTAL+VL_DESCONTO)*0.05,2)) > 0.01
+UNION ALL SELECT 'RN03 - fiado sem cliente', COUNT(*) FROM VENDA WHERE TP_PAGAMENTO='FIADO' AND ID_CLIENTE IS NULL
+UNION ALL SELECT 'RN04 - compra < R$ 1.500', COUNT(*) FROM PEDIDO_COMPRA WHERE TP_STATUS<>'CANCELADO' AND VL_TOTAL_PEDIDO < 1500
+UNION ALL SELECT 'RN06 - estoque negativo', COUNT(*) FROM PRODUTO WHERE QT_ESTOQUE < 0;
